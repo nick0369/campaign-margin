@@ -1,0 +1,2 @@
+observation_id,date,segment,converted,revenue,variable_cost,offer_cost,reason
+999999,2026-01-10,Control,0,-5.0,0.0,0,"invalid required value, category, numeric range or business constraint"

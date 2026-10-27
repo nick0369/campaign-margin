@@ -1,0 +1,26 @@
+# CampaignMargin: incremental campaign profitability
+
+## Problem and decision
+A fictional online retailer wants to know whether a discount improves incremental contribution, not just conversion. Stakeholders: growth lead, finance partner, commercial director and analytics lead. Grain: one independently randomized visitor, one assignment per unique visitor, fixed 14-day outcome window fully matured for every visitor. Data generation is retrospective; all windows are complete. Each visitor is unique and interference is assumed absent. Revenue and costs are INR; campaign offer costs include a per-contact fee. Proposed success: positive lower 95% confidence bound on incremental contribution per visitor, no unacceptable refund/customer-experience deterioration, and correct assignment reconciliation. Refund outcomes are not supplied, so that guardrail blocks a production rollout until collected.
+
+## Executive summary
+Read [the computed executive summary](../reports/EXECUTIVE_SUMMARY.md) for actual generated values and confidence intervals. This file deliberately does not hard-code improved savings. All observations are synthetic and the generator injects known differences. Business impact is a proposed decision process, not a delivered employer result.
+
+## Stakeholder acceptance
+Owner signs off KPI dictionary and grain; reconcile accepted + rejected + duplicate rows to source; reconcile SQL totals to exported fact; verify empty-filter/zero-denominator behavior; show uncertainty beside decision; record refresh date and synthetic label. A production success score requires an actual pilot and agreed costs, neither provided here.
+
+## Source and pipeline
+Run `python src/pipeline.py` for seeded local simulation; `--input path/to/file.csv` replaces the fixture with matching anonymized input. Never overwrite the packaged sample with private customer data for public publishing. Pipeline: raw CSV snapshot → required-field/type/range checks → reject invalid rows → drop identical retries → fail conflicting IDs → derive decision metrics → star schema → transactionally reload SQLite → CSV exports → statistical report. Raw files are ignored by Git, processed synthetic examples are provided. No external data licence or download required. No PII in simulation.
+
+## Schema and data dictionary
+`dim_date`: unique date_key YYYYMMDD, date ISO-8601, month YYYY-MM. `dim_segment`: unique integer segment_key and line/assignment name. `fact_observation`: unique observation_id, two dimension keys, numeric measures. No bidirectional or many-to-many relationships. Schema constraints in `sql/schema.sql` enforce nonnegative measures and referential integrity.
+converted: 0/1 mature conversion; revenue: collected sales before variable and campaign costs, zero for non-converters; variable_cost: assumed fulfillment/product costs; offer_cost: per-contact plus redeemed incentive; contribution: revenue minus both costs. No unobserved future lifetime value is counted.
+
+## Statistical design and justification
+Pre-specify contribution per assigned visitor as the primary outcome and analyze intention-to-treat: include non-converters and all contact costs. Difference in means, 2,500 independent visitor bootstrap samples, 5,000 label permutations for a two-sided Monte Carlo test with (b+1)/(B+1). Random assignment justifies exchangeability; assumes no spillovers, one row per visitor, complete outcomes and independent visitors. Percentile bootstrap can be unstable for very sparse heavy-tailed values; check quantiles and sensitivity, avoid selecting only converters. Conversion is secondary; no multiple testing adjustment is needed for a single pre-specified primary metric, but label all secondary analyses exploratory. Check assignment counts against a pre-registered 50:50 allocation (exact binomial/SRM check required before production decisions); simulation reports counts, not a completed production SRM certification. No predictive model is needed because the question is incremental causality rather than prediction. With observed real data, randomization integrity and refund guardrails must be verified before causal claims. Simulated causal effects do not generalize to a company.
+
+## Recommendations
+Do not let conversion uplift overrule contribution economics. Follow the computed confidence interval and decision in the executive summary. If uncertainty crosses zero, hold rollout and design a larger adequately powered experiment; do not claim evidence of no effect. Finance validates offer/contact costs and refunds. If profit uplift is credibly positive, run a limited monitored expansion with refund and complaint guardrails. Never extrapolate synthetic visitor results into achieved revenue.
+
+## Operational readiness and limits
+Production-oriented starter, not a deployed enterprise system. Uses local full refresh; add scheduler, restricted credentials, monitoring, encryption, retention policy, schema migrations, incremental watermarks, retries and backfills for real deployments. Record business timezone at ingestion; synthetic inputs use date only. Late-arriving outcomes require a completeness watermark. Bootstrap intervals are statistical uncertainty under assumptions, not uncertainty about a made-up generator. No live Power BI report, PBIX, Excel workbook or external deployment is claimed.

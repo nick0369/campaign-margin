@@ -1,0 +1,9 @@
+Visitors = COUNTROWS(fact_observation)
+Conversions = SUM(fact_observation[converted])
+Conversion Rate = DIVIDE([Conversions], [Visitors])
+Revenue INR = SUM(fact_observation[revenue])
+Contribution INR = SUM(fact_observation[contribution])
+Contribution per Visitor = DIVIDE([Contribution INR], [Visitors])
+Control CPV = CALCULATE([Contribution per Visitor], REMOVEFILTERS(dim_segment), dim_segment[segment] = "Control")
+Treatment CPV = CALCULATE([Contribution per Visitor], REMOVEFILTERS(dim_segment), dim_segment[segment] = "Treatment")
+Incremental CPV INR = [Treatment CPV] - [Control CPV]
